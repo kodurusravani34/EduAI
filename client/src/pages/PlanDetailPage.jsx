@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { plansAPI, tasksAPI } from '../services/api';
 import ProgressBar from '../components/ProgressBar';
@@ -25,7 +25,7 @@ export default function PlanDetailPage() {
   const [error, setError] = useState('');
   const [deleting, setDeleting] = useState(false);
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
 
   useEffect(() => {
     const fetchPlan = async () => {
@@ -36,7 +36,7 @@ export default function PlanDetailPage() {
         try {
           const taskRes = await tasksAPI.getByDate(id, todayStr);
           setTodayTasks(taskRes.data || taskRes);
-        } catch {}
+        } catch { }
       } catch (err) {
         setError(err.message || 'Failed to load plan');
       } finally {
@@ -66,6 +66,9 @@ export default function PlanDetailPage() {
     const target = tasks.find((t) => t._id === subTaskId);
     if (!target) return;
 
+    // Save snapshot for rollback before optimistic update
+    const previousTasks = { ...todayTasks, tasks: [...tasks] };
+
     setTodayTasks({
       ...todayTasks,
       tasks: tasks.map((t) =>
@@ -78,7 +81,7 @@ export default function PlanDetailPage() {
         taskUpdates: [{ _id: subTaskId, completed: !target.completed }],
       });
     } catch {
-      setTodayTasks(todayTasks);
+      setTodayTasks(previousTasks);
     }
   };
 

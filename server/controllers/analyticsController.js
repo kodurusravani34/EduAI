@@ -36,7 +36,6 @@ const getAnalytics = asyncHandler(async (req, res) => {
   // 2) Get all tasks for active plans
   // =====================================================
   const allTasks = await DailyTask.find({
-    userId,
     planId: { $in: planIds },
   })
     .sort({ date: 1 })

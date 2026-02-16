@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { plansAPI, tasksAPI } from '../services/api';
 import ProgressBar from '../components/ProgressBar';
 import { CheckCircle2, Circle, Clock, ListChecks, Loader2, AlertCircle } from 'lucide-react';
@@ -12,7 +12,7 @@ export default function DailyPlannerPage() {
   const [tasksLoading, setTasksLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
 
   useEffect(() => {
     const fetchPlans = async () => {
@@ -58,6 +58,8 @@ export default function DailyPlannerPage() {
     const targetTask = tasks.find((t) => t._id === subTaskId);
     if (!targetTask) return;
 
+    const previousTasks = [...tasks];
+
     const updatedTasks = tasks.map((t) =>
       t._id === subTaskId ? { ...t, completed: !t.completed } : t
     );
@@ -68,7 +70,7 @@ export default function DailyPlannerPage() {
         taskUpdates: [{ _id: subTaskId, completed: !targetTask.completed }],
       });
     } catch {
-      setTasks(tasks);
+      setTasks(previousTasks);
       setError('Failed to update task');
     }
   };
@@ -171,9 +173,8 @@ export default function DailyPlannerPage() {
               {tasks.map((task) => (
                 <div
                   key={task._id}
-                  className={`flex items-center gap-4 p-4 transition-colors ${
-                    task.completed ? 'bg-gray-50' : 'hover:bg-gray-50'
-                  }`}
+                  className={`flex items-center gap-4 p-4 transition-colors ${task.completed ? 'bg-gray-50' : 'hover:bg-gray-50'
+                    }`}
                 >
                   {/* Checkbox */}
                   <button onClick={() => toggleTask(task._id)}>

@@ -245,6 +245,32 @@ export default function CreatePlanPage() {
           </div>
         </div>
 
+        {/* Preferred Study Time */}
+        <FormInput
+          label="Preferred Study Time"
+          name="preferredTime"
+          type="select"
+          value={form.preferredTime}
+          onChange={handleChange}
+          options={timePreferences}
+          placeholder="Select study time"
+          error={errors.preferredTime}
+          required
+        />
+
+        {/* Break Preference */}
+        <FormInput
+          label="Break Preference"
+          name="breakPreference"
+          type="select"
+          value={form.breakPreference}
+          onChange={handleChange}
+          options={breakPreferences}
+          placeholder="Select break style"
+          error={errors.breakPreference}
+          required
+        />
+
         {/* Error */}
         {serverError && (
           <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
