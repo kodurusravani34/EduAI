@@ -78,6 +78,11 @@ app.use('/api/plans', planRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/analytics', analyticsRoutes);
 
+app.get('/', (req, res) => {
+  res.send('🚀 EduAI Backend is running');
+});
+
+
 // ─── 404 Handler ─────────────────────────────────────────────────
 app.use((req, res) => {
   res.status(404).json({
