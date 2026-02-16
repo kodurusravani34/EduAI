@@ -66,9 +66,18 @@ export default function DailyPlannerPage() {
     setTasks(updatedTasks);
 
     try {
-      await tasksAPI.update(dailyTask._id, {
+      const res = await tasksAPI.update(dailyTask._id, {
         taskUpdates: [{ _id: subTaskId, completed: !targetTask.completed }],
       });
+
+      // Update the progress in the plans list for the selected plan
+      if (res.data?.planProgress !== undefined) {
+        setPlans((prevPlans) =>
+          prevPlans.map((p) =>
+            p._id === selectedPlanId ? { ...p, progress: res.data.planProgress } : p
+          )
+        );
+      }
     } catch {
       setTasks(previousTasks);
       setError('Failed to update task');

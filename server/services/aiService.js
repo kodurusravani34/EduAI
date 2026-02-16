@@ -66,6 +66,8 @@ JSON FORMAT:
     { "day": 7, "description": "Complete fundamentals" }
   ]
 }
+
+STRICT RULE: Do NOT include any text before or after the JSON. No markdown backticks.
 `;
 
 /**
@@ -86,9 +88,9 @@ const buildUserPrompt = (planData) => {
   const today = new Date().toISOString().split('T')[0];
   const deadlineStr = new Date(deadline).toISOString().split('T')[0];
 
-  const daysAvailable = Math.max(
-    1,
-    Math.ceil((new Date(deadline) - new Date()) / (1000 * 60 * 60 * 24))
+  const daysAvailable = Math.min(
+    60,
+    Math.max(1, Math.ceil((new Date(deadline) - new Date()) / (1000 * 60 * 60 * 24)))
   );
 
   return `
@@ -103,7 +105,9 @@ DAYS AVAILABLE: ${daysAvailable}
 STUDY TIME: ${preferredStudyTime || 'morning'}
 BREAK STYLE: ${breakPreference || 'pomodoro'}
 
-Generate a day-by-day study schedule (max 30 days).
+
+Generate a day-by-day study schedule (max 60 days).
+If the number of days is large (e.g. > 30), be very concise with task descriptions to avoid cutting off.
 `;
 };
 
@@ -125,7 +129,7 @@ const generateStudyPlan = async (planData) => {
         { role: 'user', content: buildUserPrompt(planData) },
       ],
       temperature: 0.7,
-      max_tokens: 3000 // Reduced to avoid timeout
+      max_tokens: 6000 // Increased to support longer schedules (up to 60 days)
     });
 
     const content = response.choices?.[0]?.message?.content;

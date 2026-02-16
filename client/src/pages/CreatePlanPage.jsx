@@ -60,6 +60,11 @@ export default function CreatePlanPage() {
     const errs = {};
     if (!form.goal.trim()) errs.goal = 'Goal / Subject is required.';
     if (!form.deadline) errs.deadline = 'Deadline is required.';
+    else {
+      const days = Math.ceil((new Date(form.deadline) - new Date()) / (1000 * 60 * 60 * 24));
+      if (days > 60) errs.deadline = 'Maximum plan duration is 60 days.';
+      if (days < 0) errs.deadline = 'Deadline cannot be in the past.';
+    }
     if (!form.dailyHours || Number(form.dailyHours) <= 0) errs.dailyHours = 'Enter valid daily hours.';
     if (!form.level) errs.level = 'Select your current level.';
     if (form.topics.length === 0) errs.topics = 'Add at least one topic.';

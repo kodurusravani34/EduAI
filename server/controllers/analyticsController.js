@@ -16,7 +16,7 @@ const asyncHandler = require('../utils/asyncHandler');
  * Prevents timezone bugs (important for India)
  */
 const formatDate = (date) =>
-  new Date(date).toLocaleDateString('en-CA'); // YYYY-MM-DD
+  new Date(date).toLocaleDateString('en-CA', { timeZone: 'UTC' }); // YYYY-MM-DD consistent with UTC storage
 
 /**
  * GET /api/analytics
@@ -55,8 +55,14 @@ const getAnalytics = asyncHandler(async (req, res) => {
   allTasks.forEach((day) => {
     const dateStr = formatDate(day.date);
 
-    // Time tracking
-    const minutes = day.timeSpent || 0;
+    // Time tracking: Fallback to sum of completed tasks if timeSpent is 0
+    let minutes = day.timeSpent || 0;
+
+    // Fallback logic for legacy data or un-updated records
+    if (minutes === 0) {
+      minutes = day.tasks.reduce((sum, t) => sum + (t.completed ? (t.duration || 30) : 0), 0);
+    }
+
     totalTimeSpent += minutes;
     minutesByDate[dateStr] = (minutesByDate[dateStr] || 0) + minutes;
 
@@ -85,11 +91,12 @@ const getAnalytics = asyncHandler(async (req, res) => {
   // =====================================================
   // 4) Current streak
   // =====================================================
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  // Use UTC to align with formatDate
+  const now = new Date();
+  const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 
   let currentStreak = 0;
-  const checkDate = new Date(today);
+  let checkDate = new Date(todayUTC);
 
   for (let i = 0; i < 365; i++) {
     const dateStr = formatDate(checkDate);
@@ -100,7 +107,7 @@ const getAnalytics = asyncHandler(async (req, res) => {
       break; // allow today to be incomplete
     }
 
-    checkDate.setDate(checkDate.getDate() - 1);
+    checkDate.setUTCDate(checkDate.getUTCDate() - 1);
   }
 
   // =====================================================
@@ -110,14 +117,14 @@ const getAnalytics = asyncHandler(async (req, res) => {
   const weeklyStats = [];
 
   for (let i = 6; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(d.getDate() - i);
+    const d = new Date(todayUTC);
+    d.setUTCDate(d.getUTCDate() - i);
 
     const dateStr = formatDate(d);
     const minutes = minutesByDate[dateStr] || 0;
 
     weeklyStats.push({
-      day: dayNames[d.getDay()],
+      day: dayNames[d.getUTCDay()],
       date: dateStr,
       hours: Math.round((minutes / 60) * 10) / 10,
     });
@@ -128,6 +135,8 @@ const getAnalytics = asyncHandler(async (req, res) => {
     0
   );
 
+  // Weekly goal should likely be the highest dailyHours of active plans * 7, 
+  // or sum of dailyHours * 7. Let's stick to sum but ensure it's calculated on dally basis.
   const weeklyGoalHours = activePlans.reduce(
     (sum, p) => sum + (p.dailyHours || 0) * 7,
     0

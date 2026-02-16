@@ -93,7 +93,17 @@ const updateTask = asyncHandler(async (req, res) => {
     for (const update of taskUpdates) {
       const subTask = dailyTask.tasks.id(update._id);
       if (subTask) {
-        if (update.completed !== undefined) subTask.completed = update.completed;
+        if (update.completed !== undefined) {
+          const wasCompleted = subTask.completed;
+          subTask.completed = update.completed;
+
+          // Auto-update timeSpent: if task is marked done, add its duration. If undone, subtract it.
+          if (!wasCompleted && update.completed) {
+            dailyTask.timeSpent += subTask.duration || 30;
+          } else if (wasCompleted && !update.completed) {
+            dailyTask.timeSpent = Math.max(0, dailyTask.timeSpent - (subTask.duration || 30));
+          }
+        }
       }
     }
   }
